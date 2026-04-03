@@ -9,7 +9,7 @@
  * ─── CONFIGURAÇÃO NO CPANEL ──────────────────────────────────────
  * Adicione o seguinte Cron Job (a cada 5 minutos):
  *
- *   * /5 * * * * /usr/local/bin/php /home/iubsit15/public_html/cron_bot.php >> /home/iubsit15/logs/cron_bot.log 2>&1
+ *   */5 * * * * /usr/local/bin/php /home/iubsit15/public_html/cron_bot.php >> /home/iubsit15/logs/cron_bot.log 2>&1
  *
  * Ajuste o caminho conforme a estrutura de diretórios da sua hospedagem.
  * ──────────────────────────────────────────────────────────────────

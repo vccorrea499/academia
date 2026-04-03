@@ -35,7 +35,8 @@ try {
     $stmt = $pdo->prepare(
         "INSERT INTO usuarios (nome, login, email, senha, nivel)
          VALUES (:nome, :login, :email, :senha, 'admin')
-         ON DUPLICATE KEY UPDATE nome = VALUES(nome)"
+         AS new_val
+         ON DUPLICATE KEY UPDATE nome = new_val.nome"
     );
     $stmt->execute([
         ':nome'  => 'Administrador',

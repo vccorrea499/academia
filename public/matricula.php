@@ -28,6 +28,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validação básica
     if ($nome === '' || $email === '' || $senha === '' || $cpf === '') {
         $erro = 'Preencha os campos obrigatórios (Nome, E-mail, CPF e Senha).';
+    } elseif (strpos($email, '@') === false || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $erro = 'Informe um e-mail válido.';
     } elseif (strlen($senha) < 6) {
         $erro = 'A senha deve ter pelo menos 6 caracteres.';
     } else {
@@ -89,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $sucesso = 'Matrícula realizada com sucesso! Bem-vinda, Guerreira! 🥊';
         } catch (PDOException $e) {
             $pdo->rollBack();
-            if ($e->getCode() == 23000) {
+            if ((string) $e->getCode() === '23000') {
                 $erro = 'E-mail ou CPF já cadastrado no sistema.';
             } else {
                 $erro = 'Erro ao processar a matrícula. Tente novamente.';
