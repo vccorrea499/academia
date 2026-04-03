@@ -130,33 +130,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// ── Buscar dados para o dashboard ───────────────────────────────────────
-$totalAlunas     = (int) $pdo->query("SELECT COUNT(*) FROM usuarios WHERE nivel = 'aluna' AND ativo = 1")->fetchColumn();
-$totalTreinadoras = (int) $pdo->query("SELECT COUNT(*) FROM usuarios WHERE nivel = 'treinadora' AND ativo = 1")->fetchColumn();
-$totalTurmas     = (int) $pdo->query("SELECT COUNT(*) FROM turmas WHERE ativo = 1")->fetchColumn();
-$pgPendentes     = (int) $pdo->query("SELECT COUNT(*) FROM pagamentos WHERE status IN ('pendente','atrasado')")->fetchColumn();
-$totalMatriculas = (int) $pdo->query("SELECT COUNT(*) FROM matriculas WHERE status = 'ativa'")->fetchColumn();
-$notifPendentes  = (int) $pdo->query("SELECT COUNT(*) FROM fila_notificacoes WHERE status = 'pendente'")->fetchColumn();
-
-// Usuárias
-$usuarios = $pdo->query("SELECT id, nome, login, email, nivel, ativo, criado_em FROM usuarios ORDER BY criado_em DESC")->fetchAll();
-
-// Turmas
-$turmas = $pdo->query("SELECT id, nome, horario, dia_semana, max_alunas, ativo FROM turmas ORDER BY nome")->fetchAll();
-
-// Pagamentos recentes
-$pagamentos = $pdo->query("
-    SELECT p.id, u.nome AS aluna, t.nome AS turma, p.valor, p.data_venc, p.data_pgto, p.metodo, p.status
-    FROM pagamentos p
-    JOIN matriculas m ON p.matricula_id = m.id
-    JOIN usuarios u ON m.usuario_id = u.id
-    JOIN turmas t ON m.turma_id = t.id
-    ORDER BY p.data_venc DESC
-    LIMIT 50
-")->fetchAll();
-
 // ── Seção visualizada ───────────────────────────────────────────────────
 $secao = $_GET['s'] ?? 'dashboard';
+
+// ── Buscar dados apenas para a seção ativa ──────────────────────────────
+$totalAlunas = $totalTreinadoras = $totalTurmas = $pgPendentes = $totalMatriculas = $notifPendentes = 0;
+$usuarios = $turmas = $pagamentos = [];
+
+if ($secao === 'dashboard') {
+    $totalAlunas     = (int) $pdo->query("SELECT COUNT(*) FROM usuarios WHERE nivel = 'aluna' AND ativo = 1")->fetchColumn();
+    $totalTreinadoras = (int) $pdo->query("SELECT COUNT(*) FROM usuarios WHERE nivel = 'treinadora' AND ativo = 1")->fetchColumn();
+    $totalTurmas     = (int) $pdo->query("SELECT COUNT(*) FROM turmas WHERE ativo = 1")->fetchColumn();
+    $pgPendentes     = (int) $pdo->query("SELECT COUNT(*) FROM pagamentos WHERE status IN ('pendente','atrasado')")->fetchColumn();
+    $totalMatriculas = (int) $pdo->query("SELECT COUNT(*) FROM matriculas WHERE status = 'ativa'")->fetchColumn();
+    $notifPendentes  = (int) $pdo->query("SELECT COUNT(*) FROM fila_notificacoes WHERE status = 'pendente'")->fetchColumn();
+} elseif ($secao === 'usuarios') {
+    $usuarios = $pdo->query("SELECT id, nome, login, email, nivel, ativo, criado_em FROM usuarios ORDER BY criado_em DESC")->fetchAll();
+} elseif ($secao === 'turmas') {
+    $turmas = $pdo->query("SELECT id, nome, horario, dia_semana, max_alunas, ativo FROM turmas ORDER BY nome")->fetchAll();
+} elseif ($secao === 'pagamentos') {
+    $pagamentos = $pdo->query("
+        SELECT p.id, u.nome AS aluna, t.nome AS turma, p.valor, p.data_venc, p.data_pgto, p.metodo, p.status
+        FROM pagamentos p
+        JOIN matriculas m ON p.matricula_id = m.id
+        JOIN usuarios u ON m.usuario_id = u.id
+        JOIN turmas t ON m.turma_id = t.id
+        ORDER BY p.data_venc DESC
+        LIMIT 50
+    ")->fetchAll();
+}
 
 $tituloPagina = 'Painel Admin';
 require_once __DIR__ . '/header.php';

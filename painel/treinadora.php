@@ -29,6 +29,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($turmaId <= 0) {
                 throw new RuntimeException('Selecione uma turma.');
             }
+            if (!DateTime::createFromFormat('Y-m-d', $dataAula)) {
+                throw new RuntimeException('Data da aula inválida.');
+            }
 
             // Buscar todas as alunas matriculadas nessa turma
             $stmt = $pdo->prepare("
@@ -88,30 +91,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// ── Dados ───────────────────────────────────────────────────────────────
-$turmas = $pdo->query("SELECT id, nome, horario, dia_semana FROM turmas WHERE ativo = 1 ORDER BY nome")->fetchAll();
-
-$turmaSelec = (int) ($_GET['turma'] ?? 0);
-$alunasTurma = [];
-if ($turmaSelec > 0) {
-    $stmt = $pdo->prepare("
-        SELECT u.id, u.nome, u.whatsapp
-        FROM usuarios u
-        JOIN matriculas m ON m.usuario_id = u.id
-        WHERE m.turma_id = :tid AND m.status = 'ativa' AND u.ativo = 1
-        ORDER BY u.nome
-    ");
-    $stmt->execute([':tid' => $turmaSelec]);
-    $alunasTurma = $stmt->fetchAll();
-}
-
-// Todas as alunas (para conquistas)
-$todasAlunas = $pdo->query("SELECT id, nome FROM usuarios WHERE nivel = 'aluna' AND ativo = 1 ORDER BY nome")->fetchAll();
-
-// Técnicas
-$tecnicas = $pdo->query("SELECT id, nome, categoria FROM tecnicas_checklist ORDER BY categoria, nome")->fetchAll();
-
+// ── Seção visualizada ───────────────────────────────────────────────────
 $secao = $_GET['s'] ?? 'frequencia';
+
+// ── Dados — apenas para a seção ativa ───────────────────────────────────
+$turmas = [];
+$turmaSelec = 0;
+$alunasTurma = [];
+$todasAlunas = [];
+$tecnicas = [];
+
+if ($secao === 'frequencia' || $secao === 'turmas') {
+    $turmas = $pdo->query("SELECT id, nome, horario, dia_semana FROM turmas WHERE ativo = 1 ORDER BY nome")->fetchAll();
+
+    if ($secao === 'frequencia') {
+        $turmaSelec = (int) ($_GET['turma'] ?? 0);
+        if ($turmaSelec > 0) {
+            $stmt = $pdo->prepare("
+                SELECT u.id, u.nome, u.whatsapp
+                FROM usuarios u
+                JOIN matriculas m ON m.usuario_id = u.id
+                WHERE m.turma_id = :tid AND m.status = 'ativa' AND u.ativo = 1
+                ORDER BY u.nome
+            ");
+            $stmt->execute([':tid' => $turmaSelec]);
+            $alunasTurma = $stmt->fetchAll();
+        }
+    }
+} elseif ($secao === 'conquistas') {
+    $todasAlunas = $pdo->query("SELECT id, nome FROM usuarios WHERE nivel = 'aluna' AND ativo = 1 ORDER BY nome")->fetchAll();
+    $tecnicas = $pdo->query("SELECT id, nome, categoria FROM tecnicas_checklist ORDER BY categoria, nome")->fetchAll();
+}
 
 $tituloPagina = 'Painel Treinadora';
 require_once __DIR__ . '/header.php';
